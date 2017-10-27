@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from datetime import datetime
-from send_email import Mail
+from sniffer_scraper.send_email import Mail
 import logging
 import sqlite3
 

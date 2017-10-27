@@ -2,7 +2,7 @@ import logging
 import argparse
 import configparser
 from scrapy.crawler import CrawlerProcess
-from spider import NjuskaloSpider
+from sniffer_scraper.spider import NjuskaloSpider
 
 # define logging
 logging.basicConfig(level=logging.WARNING,
@@ -22,7 +22,7 @@ def load_config():
     return config
 
 
-if __name__ == '__main__':
+def main():
     config = load_config()
 
     crawler_settings = dict(config['CRAWLER_PROCESS_SETTINGS'])
@@ -34,6 +34,10 @@ if __name__ == '__main__':
     process = CrawlerProcess(crawler_settings)
     process.crawl(NjuskaloSpider, urls, n_pages)
     process.start()
+
+
+if __name__ == '__main__':
+    main()
 
 
 
