@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def load_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", default='./config_example.ini', help="path to config file")
+    parser.add_argument("-c", "--config", help="path to config file", required=True)
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
