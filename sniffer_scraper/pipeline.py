@@ -3,7 +3,7 @@ from datetime import datetime
 from sniffer_scraper.send_email import Mail
 import logging
 import sqlite3
-
+import json
 
 class PrintPipeline(object):
 
@@ -100,6 +100,7 @@ class EmailPipeline(object):
             lines.append('[{}], {} eura, {}'.format(item['publish_date'], item['price_eur'], item['title']))
             lines.append(item['url'])
             lines.append('\n')
+
         if not lines:
             return
 
@@ -109,8 +110,14 @@ class EmailPipeline(object):
         def get(prop):
             return spider.settings.get(prop)
 
-        mail = Mail(get('username'),
-                    get('app_password'),
-                    get('smtp_server'),
-                    int(get('port')))
-        mail.send_mail(title, body, get('recipient'))
+        def all_recepients():
+            recepient = get('recepient')
+            return [recepient] if recepient else json.loads(get('recepients'))
+
+        for recepient in all_recepients():
+            print(f'Mailing {recepient}')
+            mail = Mail(get('username'),
+                get('app_password'),
+                get('smtp_server'),
+                int(get('port')))
+            mail.send_mail(title, body, recepient)
