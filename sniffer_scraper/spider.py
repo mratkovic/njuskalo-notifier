@@ -7,7 +7,6 @@ configure_logging(install_root_handler=False)
 logging.getLogger('scrapy').setLevel(logging.WARNING)
 logging.getLogger('scrapy').propagate = False
 
-
 class NjuskaloSpider(scrapy.Spider):
     name = "njuskalo"
 
@@ -22,16 +21,23 @@ class NjuskaloSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse_page)
 
     def parse(self, response):
-        def parse_price(currency):
-            str_value = _css_get(response, '.base-entity-summary .price--{}::text'.format(currency))
-            return int(str_value.replace('.', ''))
+        def parse_price(label, currency_suffix):
+            str_value = _css_get(response, f'.ClassifiedDetailSummary-price{label}::text')
+            try:
+                return int(
+                    str_value.replace('.', '')
+                             .replace(u'\xa0', '')
+                             .replace(currency_suffix, '')
+                )
+            except:
+                print(f"Could not parse '{str_value}'")
 
         result = {
             'url': response.url,
-            'title': _css_get(response, '.base-entity-title .entity-title::text'),
-            'price_hrk': parse_price('hrk'),
-            'price_eur': parse_price('eur'),
-            'id': _css_get(response, '.base-entity-id::text'),
+            'title': _css_get(response, '.ClassifiedDetailSummary-title::text'),
+            'price_hrk': parse_price('Domestic', 'kn'),
+            'price_eur': parse_price('Foreign', u'€'),
+            'id': _css_get(response, '.ClassifiedDetailSummary-adCode::text').replace('Šifra oglasa:', '').strip(),
             'publish_date': _get_publish_date(response),
         }
         table = _parse_table(response)
@@ -71,22 +77,24 @@ def _next_page_url(url):
 
 
 def _parse_table(response):
-    headers = response.css('tr th::text').extract()
+    table_values = response.css('.ClassifiedDetailBasicDetails-textWrapContainer')
+    table_values = [_css_get(elem, '::text') for elem in table_values]
+
+    def chunks(lst, n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
     table = {}
-
-    for row, header in enumerate(headers):
-        header = header.replace(':', '')
-        table[header] = _css_get(response, 'tr:nth-child({}) td::text'.format(row + 1))
-
+    for key, value in chunks(table_values, 2):
+        table[key] = value
     return table
 
 
 def _get_publish_date(response):
-    for meta in response.css('.base-entity-summary .meta-item--hidden'):
-        title = meta.css('.meta-item .label::text').extract_first()
-        value = meta.css('.meta-item .value::text').extract_first()
-        if title.strip() == 'Objavljen:':
-            return value
+    data = response.css('.ClassifiedDetailSystemDetails-listData')
+    if data:
+        return _css_get(data[0], '::text')
     return ''
 
 
