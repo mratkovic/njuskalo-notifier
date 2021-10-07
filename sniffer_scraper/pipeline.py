@@ -19,11 +19,10 @@ class PrintPipeline(object):
 
     def close_spider(self, spider):
         for item in sorted(self.items, key=lambda x: x['publish_date'], reverse=True):
-            print('[{}], {} euro, {}'.format(item['publish_date'], item['price_eur'], item['title']))
-            print(item['url'])
-            print()
+            logging.info('[{}], {} euro, {}'.format(item['publish_date'], item['price_eur'], item['title']))
+            logging.info(item['url'])
 
-        print("Total: {}".format(len(self.items)))
+        logging.info("Total: {}".format(len(self.items)))
 
 
 class SqliteFilterNewPipeline(object):
@@ -119,7 +118,8 @@ class EmailPipeline(object):
             return [recepient] if recepient else json.loads(get('recepients'))
 
         for recepient in all_recepients():
-            print(f'Mailing {recepient}')
+            logging.info(f'Mailing {recepient}')
+
             mail = Mail(get('username'),
                 get('app_password'),
                 get('smtp_server'),

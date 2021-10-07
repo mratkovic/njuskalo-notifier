@@ -5,7 +5,7 @@ from scrapy.crawler import CrawlerProcess
 from sniffer_scraper.spider import NjuskaloSpider
 
 # define logging
-logging.basicConfig(level=logging.WARNING,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ def load_config():
 
 
 def main():
+    logging.info( "Started..." )
     config = load_config()
 
     crawler_settings = dict(config['CRAWLER_PROCESS_SETTINGS'])
@@ -34,6 +35,8 @@ def main():
     process = CrawlerProcess(crawler_settings)
     process.crawl(NjuskaloSpider, urls, n_pages)
     process.start()
+
+    logging.info( "Done..." )
 
 
 if __name__ == '__main__':

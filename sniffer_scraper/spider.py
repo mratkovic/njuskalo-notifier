@@ -30,7 +30,7 @@ class NjuskaloSpider(scrapy.Spider):
                              .replace(currency_suffix, '')
                 )
             except:
-                print(f"Could not parse '{str_value}'")
+                logging.error(f"Could not parse '{str_value}'")
 
         result = {
             'url': response.url,
