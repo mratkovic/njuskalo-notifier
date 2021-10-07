@@ -66,12 +66,16 @@ class SqliteFilterNewPipeline(object):
         if self.con is None:
             self.setup(spider.settings.get('db_path'))
 
-        if not self.exists(item):
+        if self.new_ad(item):
+        # if self.new_or_bumped_ad(item):
             self.dump_to_db(item)
             return item
 
-    def exists(self, item):
-        return self.cur.execute("SELECT * from Ads where ad_id=? and date_published=?",
+    def new_ad(self, item):
+        return not self.cur.execute("SELECT * from Ads where ad_id=?",(item['id'],)).fetchone()
+
+    def new_or_bumped_ad(self, item):
+        return not self.cur.execute("SELECT * from Ads where ad_id=? and date_published=?",
                                 (item['id'], item['publish_date'])).fetchone()
 
     def dump_to_db(self, item):
