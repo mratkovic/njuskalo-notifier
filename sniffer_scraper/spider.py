@@ -21,22 +21,13 @@ class NjuskaloSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse_page)
 
     def parse(self, response):
-        def parse_price(label, currency_suffix):
-            str_value = _css_get(response, f'.ClassifiedDetailSummary-price{label}::text')
-            try:
-                return int(
-                    str_value.replace('.', '')
-                             .replace(u'\xa0', '')
-                             .replace(currency_suffix, '')
-                )
-            except:
-                logging.error(f"Could not parse '{str_value}'")
+        price_eur, price_hrk = _parse_price(response)
 
         result = {
             'url': response.url,
             'title': _css_get(response, '.ClassifiedDetailSummary-title::text'),
-            'price_hrk': parse_price('Domestic', 'kn'),
-            'price_eur': parse_price('Foreign', u'€'),
+            'price_hrk': price_hrk,
+            'price_eur': price_eur,
             'id': _css_get(response, '.ClassifiedDetailSummary-adCode::text').replace('Šifra oglasa:', '').strip(),
             'publish_date': _get_publish_date(response),
         }
@@ -97,6 +88,20 @@ def _get_publish_date(response):
         return _css_get(data[0], '::text')
     return ''
 
+def _parse_price(response):
+    def parse_price(val, currency):
+        try:
+            # sanitized = [d for d in val if d.isdigit()]
+            sanitized = val.replace('.', '').replace(',', '').replace(currency, '')
+            return int(sanitized)
+        except:
+            logging.error(f"Could not parse {currency} price: '{val}'")
+
+    price_str = _css_get(response, f'.ClassifiedDetailSummary-priceDomestic::text')
+    eur, *hrk = price_str.split(' / ', 1)
+    eur = parse_price(eur,  u'€')
+    hrk = parse_price(hrk[0], 'kn') if hrk else eur * 7.53450
+    return eur, hrk
 
 def _css_get(r, sel):
     selected = r.css(sel).extract()

@@ -19,7 +19,7 @@ class PrintPipeline(object):
 
     def close_spider(self, spider):
         for item in sorted(self.items, key=lambda x: x['publish_date'], reverse=True):
-            logging.info('[{}], {} euro, {}'.format(item['publish_date'], item['price_eur'], item['title']))
+            logging.info('[{}], {} EUR, {}'.format(item['publish_date'], item['price_eur'], item['title']))
             logging.info(item['url'])
 
         logging.info("Total: {}".format(len(self.items)))
@@ -100,7 +100,7 @@ class EmailPipeline(object):
     def close_spider(self, spider):
         lines = []
         for item in sorted(self.items, key=lambda x: x['publish_date'], reverse=True):
-            lines.append('[{}], {} eura, {}'.format(item['publish_date'], item['price_eur'], item['title']))
+            lines.append('[{}], {:,.2f} €, {}'.format(item['publish_date'], item['price_eur'], item['title']))
             lines.append(item['url'])
             lines.append('\n')
 
