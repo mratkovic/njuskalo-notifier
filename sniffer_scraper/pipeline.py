@@ -4,6 +4,7 @@ from sniffer_scraper.send_email import Mail
 import logging
 import sqlite3
 import json
+from collections import defaultdict
 
 class PrintPipeline(object):
 
@@ -98,17 +99,28 @@ class EmailPipeline(object):
             return item
 
     def close_spider(self, spider):
-        lines = []
-        for item in sorted(self.items, key=lambda x: x['publish_date'], reverse=True):
-            lines.append('[{}], {:,.2f} €, {}'.format(item['publish_date'], item['price_eur'], item['title']))
-            lines.append(item['url'])
-            lines.append('\n')
-
-        if not lines:
+        if not self.items:
             return
 
-        body = '\n'.join(lines)
+        items_per_filter = defaultdict(list)
+        for item in self.items:
+            items_per_filter[item['filter_name']].append(item)
+
+        def generate_report_lines(title, items):
+            lines = [f'[{title}]']
+            for item in sorted(items, key=lambda x: x['publish_date'], reverse=True):
+                lines.append('\t[{}], {:,.2f} €, {}'.format(item['publish_date'], item['price_eur'], item['title']))
+                lines.append(f"\t{item['url']}")
+                lines.append('\n')
+            body = '\n'.join(lines)
+            return body
+        
+        reports = []
+        for filter_name in sorted(items_per_filter):
+            reports.append(generate_report_lines(filter_name, items_per_filter[filter_name]))
+
         title = 'Report - {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        body = '\n\n'.join(reports)
 
         def get(prop):
             return spider.settings.get(prop)

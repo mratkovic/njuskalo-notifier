@@ -10,20 +10,21 @@ logging.getLogger('scrapy').propagate = False
 class NjuskaloSpider(scrapy.Spider):
     name = "njuskalo"
 
-    def __init__(self, urls=None, n_pages=1):
+    def __init__(self, filters=None, n_pages=1):
         self.n_pages = n_pages
-        self.urls = []
-        if urls:
-            self.urls = urls
+        self.filters = {}
+        if filters:
+            self.filters = filters
 
     def start_requests(self):
-        for url in self.urls:
-            yield scrapy.Request(url=url, callback=self.parse_page)
+        for filter_name, url in self.filters.items():
+            yield scrapy.Request(url=url, callback=self.parse_page, meta={'filter_name': filter_name})
 
     def parse(self, response):
         price_eur, price_hrk = _parse_price(response)
 
         result = {
+            'filter_name': response.meta.get('filter_name'),
             'url': response.url,
             'title': _css_get(response, '.ClassifiedDetailSummary-title::text'),
             'price_hrk': price_hrk,
@@ -41,7 +42,7 @@ class NjuskaloSpider(scrapy.Spider):
         # logging.debug('Parsing %s', response.url)
         for href in response.css(".EntityList-item--Regular .entity-title .link::attr(href)"):
             oglas_url = response.urljoin(href.extract())
-            yield scrapy.Request(oglas_url, self.parse)
+            yield scrapy.Request(oglas_url, self.parse, meta={'filter_name': response.meta.get('filter_name')})
 
         for req in self._next_page(response):
             yield req
@@ -51,7 +52,7 @@ class NjuskaloSpider(scrapy.Spider):
         next_page_url, page_num = _next_page_url(response.url)
 
         if next_page_button and page_num <= self.n_pages:
-            yield scrapy.Request(next_page_url, self.parse_page)
+            yield scrapy.Request(next_page_url, self.parse_page, meta={'filter_name': response.meta.get('filter_name')})
 
 
 def _next_page_url(url):

@@ -35,14 +35,15 @@ def main():
     crawler_settings = dict(config['CRAWLER_PROCESS_SETTINGS'])
     crawler_settings['ITEM_PIPELINES'] = {k: int(v) for k, v in config.items('ITEM_PIPELINES')}
 
-    urls = [v for _, v in config.items('URLs')]
+    filters = {name: url for name, url in config.items('URLs')}
     n_pages = config.getint('CRAWLER_PROCESS_SETTINGS', 'n_pages')
 
     process = CrawlerProcess(crawler_settings)
-    process.crawl(NjuskaloSpider, urls, n_pages)
+    process.crawl(NjuskaloSpider, filters, n_pages)
     process.start()
 
-    if ping_url := config.get('MONITORING', 'ping_url', fallback=None):
+    ping_url = config.get('MONITORING', 'ping_url', fallback=None)
+    if ping_url:
         send_ping(ping_url)
 
     logging.info("Done...")
