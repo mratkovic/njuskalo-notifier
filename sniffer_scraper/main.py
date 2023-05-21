@@ -1,4 +1,5 @@
 import logging
+import requests
 import argparse
 import configparser
 from scrapy.crawler import CrawlerProcess
@@ -21,9 +22,14 @@ def load_config():
     config.read(args.config)
     return config
 
+def send_ping(ping_url):
+    try:
+        requests.get(ping_url, timeout=10)
+    except requests.RequestException as e:
+        logging.info(f'Sending ping failed! {ping_url}\n{e}')
 
 def main():
-    logging.info( "Started..." )
+    logging.info("Started...")
     config = load_config()
 
     crawler_settings = dict(config['CRAWLER_PROCESS_SETTINGS'])
@@ -36,11 +42,11 @@ def main():
     process.crawl(NjuskaloSpider, urls, n_pages)
     process.start()
 
-    logging.info( "Done..." )
+    if ping_url := config.get('MONITORING', 'ping_url', fallback=None):
+        send_ping(ping_url)
+
+    logging.info("Done...")
 
 
 if __name__ == '__main__':
     main()
-
-
-
